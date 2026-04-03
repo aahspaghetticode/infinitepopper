@@ -1,5 +1,5 @@
-namespace InfinitePopper;
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
@@ -10,9 +10,19 @@ public class InfinitePopperPlugin : BaseUnityPlugin
     private static ManualLogSource Log;
     private readonly Harmony harmony = new Harmony("com.h3nw.infinitepopper");
 
+    public static ConfigEntry<bool> ModEnabled { get; private set; }
+
     private void Awake()
     {
         Log = Logger;
+
+        ModEnabled = Config.Bind(
+            "General",           // Section
+            "Enabled",           // Key
+            true,                // Default value
+            "Enable infinite party popper uses." // Description
+        );
+
         harmony.PatchAll();
         Logger.LogInfo("Infinite Party Popper loaded!");
     }
@@ -22,9 +32,12 @@ public class InfinitePopperPlugin : BaseUnityPlugin
 public class PartyPopperPatch
 {
     static void Postfix(PartyPopper __instance,
-        ref bool ___wasUsedOnConfig,
-        ref bool ___wasConfig)
+                        ref bool ___wasUsedOnConfig,
+                        ref bool ___wasConfig)
     {
+        // Respect the config toggle
+        if (!InfinitePopperPlugin.ModEnabled.Value) return;
+
         var usedEntryField = AccessTools.Field(typeof(PartyPopper), "usedEntry");
         var stashEntryField = AccessTools.Field(typeof(PartyPopper), "stashAbleEntry");
 
